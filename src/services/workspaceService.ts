@@ -1,6 +1,6 @@
 import { API_URL } from '../config'
 import type { Listing, ListingForm, Material, MaterialForm, PaymentMethod, Planner, PlannerForm, Progress, ProgressForm, Recommendation, Transaction } from '../types'
-import { apiRequest } from './api'
+import { apiErrorMessage, apiRequest } from './api'
 
 export type UploadResult = { secureUrl: string; publicId: string }
 
@@ -15,14 +15,7 @@ export async function uploadMaterialFile(token: string, file: File) {
   })
 
   if (!response.ok) {
-    let message = `Error ${response.status}`
-    try {
-      const data = await response.json()
-      message = data.message || data.error || message
-    } catch {
-      message = response.statusText || message
-    }
-    throw new Error(message)
+    throw new Error(await apiErrorMessage(response))
   }
 
   return response.json() as Promise<UploadResult>
