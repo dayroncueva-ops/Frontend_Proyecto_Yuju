@@ -1,0 +1,46 @@
+﻿{
+  "expo": {
+    "name": "Yuju Mobile",
+    "slug": "yuju-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Yuju necesita acceder a la camara para capturar evidencias o materiales de estudio.",
+        "NSMicrophoneUsageDescription": "Yuju necesita acceder al microfono para grabar notas de audio de estudio."
+      }
+    },
+    "android": {
+      "permissions": ["CAMERA", "RECORD_AUDIO"],
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Yuju necesita acceder a la camara para capturar evidencias o materiales de estudio.",
+          "microphonePermission": "Yuju necesita acceder al microfono para grabar notas de audio de estudio.",
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Yuju necesita acceder al microfono para grabar notas de audio de estudio."
+        }
+      ]
+    ],
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
