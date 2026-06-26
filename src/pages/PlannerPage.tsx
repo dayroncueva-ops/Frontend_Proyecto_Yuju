@@ -1,8 +1,9 @@
-﻿import type { FormEvent } from 'react'
+import type { FormEvent } from 'react'
+import { EmptyState } from '../components/EmptyState'
 import type { Planner, PlannerForm, Progress, ProgressForm } from '../types'
 import { formatDate } from '../utils/format'
 
-export function PlannerPage({ plannerForm, setPlannerForm, progressForm, setProgressForm, savePlanner, saveProgress, loading, planner, progress }: {
+export function PlannerPage({ plannerForm, setPlannerForm, progressForm, setProgressForm, savePlanner, saveProgress, loading, planners, progress }: {
   plannerForm: PlannerForm
   setPlannerForm: (form: PlannerForm) => void
   progressForm: ProgressForm
@@ -10,7 +11,7 @@ export function PlannerPage({ plannerForm, setPlannerForm, progressForm, setProg
   savePlanner: (event: FormEvent) => void
   saveProgress: (event: FormEvent) => void
   loading: boolean
-  planner: Planner | null
+  planners: Planner[]
   progress: Progress | null
 }) {
   return (
@@ -32,11 +33,26 @@ export function PlannerPage({ plannerForm, setPlannerForm, progressForm, setProg
         <button className="primary" disabled={loading}>Guardar progreso</button>
       </form>
       <article className="panel wide">
-        <h2>Resumen guardado</h2>
+        <h2>Planes guardados</h2>
+        {planners.length === 0 ? <EmptyState title="Sin planes activos" detail="Guarda un plan para verlo en esta lista. Los planes vencidos se retiran automaticamente." /> : (
+          <div className="cards-grid compact">
+            {planners.map((plan) => (
+              <article className="mini-card" key={plan.id}>
+                <strong>{plan.weeklyGoal}</strong>
+                <span>{formatDate(plan.startDate)} - {formatDate(plan.endDate)}</span>
+                <div className="detail-row"><span>{plan.priority}</span><strong>{plan.targetHours} h</strong></div>
+                <span>{plan.planStatus}</span>
+              </article>
+            ))}
+          </div>
+        )}
+      </article>
+      <article className="panel wide">
+        <h2>Resumen de progreso</h2>
         <div className="summary-grid">
-          <div><span>Plan</span><strong>{planner?.weeklyGoal ?? 'Sin plan registrado'}</strong></div>
           <div><span>Horas</span><strong>{progress?.studyHours ?? 0}</strong></div>
           <div><span>Metas</span><strong>{progress?.completedGoals ?? 0}</strong></div>
+          <div><span>Racha</span><strong>{progress?.currentStreak ?? 0}</strong></div>
           <div><span>Ultima actualizacion</span><strong>{formatDate(progress?.lastUpdatedAt)}</strong></div>
         </div>
       </article>

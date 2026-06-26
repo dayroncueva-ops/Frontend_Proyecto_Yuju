@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import './App.css'
 import { initialListing, initialMaterial, initialPlanner, initialProgress } from './config'
@@ -20,6 +20,7 @@ type WorkspaceState = {
   listings: Listing[]
   transactions: Transaction[]
   planner: Planner | null
+  planners: Planner[]
   progress: Progress | null
   recommendations: Recommendation[]
 }
@@ -29,6 +30,7 @@ const emptyWorkspace: WorkspaceState = {
   listings: [],
   transactions: [],
   planner: null,
+  planners: [],
   progress: null,
   recommendations: [],
 }
@@ -47,6 +49,8 @@ function App() {
   const [plannerForm, setPlannerForm] = useState<PlannerForm>(initialPlanner)
   const [progressForm, setProgressForm] = useState<ProgressForm>(initialProgress)
   const [materialForm, setMaterialForm] = useState<MaterialForm>(initialMaterial)
+  const [materialFile, setMaterialFile] = useState<File | null>(null)
+  const [materialFileInputKey, setMaterialFileInputKey] = useState(0)
   const [listingForm, setListingForm] = useState<ListingForm>(initialListing)
   const [prompt, setPrompt] = useState('Como puedo organizarme mejor para estudiar esta semana?')
 
@@ -56,10 +60,10 @@ function App() {
     if (!token) return
     setLoading(true)
     try {
-      const [materials, listings, planner, progress, recommendations, transactions] = await Promise.allSettled([
+      const [materials, listings, planners, progress, recommendations, transactions] = await Promise.allSettled([
         workspace.getMaterials(token),
         workspace.getListings(token),
-        workspace.getPlanner(token),
+        workspace.getPlanners(token),
         workspace.getProgress(token),
         workspace.getRecommendations(token),
         workspace.getTransactions(token),
@@ -68,7 +72,8 @@ function App() {
       setData({
         materials: materials.status === 'fulfilled' ? materials.value : [],
         listings: listings.status === 'fulfilled' ? listings.value : [],
-        planner: planner.status === 'fulfilled' ? planner.value : null,
+        planners: planners.status === 'fulfilled' ? planners.value : [],
+        planner: planners.status === 'fulfilled' ? planners.value[0] ?? null : null,
         progress: progress.status === 'fulfilled' ? progress.value : null,
         recommendations: recommendations.status === 'fulfilled' ? recommendations.value : [],
         transactions: transactions.status === 'fulfilled' ? transactions.value : [],
@@ -148,7 +153,8 @@ function App() {
     event.preventDefault()
     await runAction(async () => {
       const planner = await workspace.savePlanner(token, plannerForm)
-      setData((current) => ({ ...current, planner }))
+      const planners = await workspace.getPlanners(token).catch(() => [planner, ...data.planners])
+      setData((current) => ({ ...current, planner, planners }))
       setNotice({ type: 'ok', message: 'Plan guardado correctamente.' })
     })
   }
@@ -167,8 +173,12 @@ function App() {
   async function createMaterial(event: FormEvent) {
     event.preventDefault()
     await runAction(async () => {
-      await workspace.createMaterial(token, materialForm)
+      if (!materialFile) throw new Error('Selecciona un archivo para subirlo a Cloudinary.')
+      const upload = await workspace.uploadMaterialFile(token, materialFile)
+      await workspace.createMaterial(token, { ...materialForm, fileUrl: upload.secureUrl })
       setMaterialForm(initialMaterial)
+      setMaterialFile(null)
+      setMaterialFileInputKey((current) => current + 1)
       setNotice({ type: 'ok', message: 'Material publicado. Ya puedes seleccionarlo en Marketplace.' })
       await loadWorkspace()
       setView('marketplace')
@@ -220,8 +230,8 @@ function App() {
         <Topbar view={view} loading={loading} onRefresh={loadWorkspace} />
         <Notice notice={notice} />
         {view === 'dashboard' && <DashboardPage planner={data.planner} progress={data.progress} recommendations={data.recommendations} materials={data.materials} listings={data.listings} transactions={data.transactions} />}
-        {view === 'planner' && <PlannerPage plannerForm={plannerForm} setPlannerForm={setPlannerForm} progressForm={progressForm} setProgressForm={setProgressForm} savePlanner={savePlanner} saveProgress={saveProgress} loading={loading} planner={data.planner} progress={data.progress} />}
-        {view === 'materials' && <MaterialsPage materials={data.materials} materialForm={materialForm} setMaterialForm={setMaterialForm} createMaterial={createMaterial} loading={loading} />}
+        {view === 'planner' && <PlannerPage plannerForm={plannerForm} setPlannerForm={setPlannerForm} progressForm={progressForm} setProgressForm={setProgressForm} savePlanner={savePlanner} saveProgress={saveProgress} loading={loading} planners={data.planners} progress={data.progress} />}
+        {view === 'materials' && <MaterialsPage materials={data.materials} materialForm={materialForm} setMaterialForm={setMaterialForm} materialFile={materialFile} setMaterialFile={setMaterialFile} materialFileInputKey={materialFileInputKey} createMaterial={createMaterial} loading={loading} />}
         {view === 'marketplace' && <MarketplacePage listings={data.listings} materials={data.materials} listingForm={listingForm} setListingForm={setListingForm} createListing={createListing} purchaseListing={purchaseListing} loading={loading} transactions={data.transactions} currentUserId={session.user.id} />}
         {view === 'mentor' && <MentorPage recommendations={data.recommendations} generateRecommendation={generateRecommendation} askMentor={askMentor} prompt={prompt} setPrompt={setPrompt} mentorAnswer={mentorAnswer} loading={loading} />}
       </section>

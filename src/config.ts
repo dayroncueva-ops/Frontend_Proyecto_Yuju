@@ -1,4 +1,4 @@
-﻿export const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080/api/v1'
+export const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080/api/v1'
 export const SESSION_KEY = 'yuju-session'
 
 export const today = new Date().toISOString().slice(0, 10)
@@ -26,7 +26,7 @@ export const initialMaterial = {
   materialType: 'PDF' as const,
   category: '',
   price: 0,
-  fileUrl: 'https://example.com/material.pdf',
+  fileUrl: '',
 }
 
 export const initialListing = { materialId: '', transactionType: 'SALE' as const, stock: 1 }
